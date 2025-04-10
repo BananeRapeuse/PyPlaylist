@@ -1,1 +1,1 @@
-python "C:\PyPlaylist\main.py"
+python main.py
