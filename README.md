@@ -1,6 +1,8 @@
 # PyPlaylist
  A Python program to listen musics downloaded from internet and make playlists (only for windows due to mpv)
 
+<img src="PyPlaylist.png" alt="PyPlaylist Logo">
+
  # Requirements
  1. 1st of all, you absolutly need to install [python](https://www.python.org)
  2. Then, to install all the requirements, just download "install_req.bat" and launch it as admin
