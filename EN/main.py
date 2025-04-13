@@ -19,7 +19,7 @@ import threading
 import time
 import random
 
-# Create directories if missing
+# Create folders if missing
 os.makedirs(PLAYLISTS_DIR, exist_ok=True)
 os.makedirs(THUMBNAIL_DIR, exist_ok=True)
 
@@ -56,17 +56,24 @@ class PyPlaylistApp:
         self.playlist_frame = tk.Frame(root, bg=self.bg_color)
         self.playlist_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Create the theme button before calling load_playlists
+        # Create theme button first before calling load_playlists
         self.theme_button = None
         
-        # Initialize the MPV player with an event handler for end of file
+        # Flag to control auto-play
+        self.skip_next_auto_play = False
+        
+        # Initialize MPV player with event handler for end of file
         self.player = mpv.MPV(input_default_bindings=True, input_vo_keyboard=True)
         
-        # Add an event listener to detect end of file
+        # Add event listener to detect end of file
         @self.player.event_callback('end-file')
         def on_end_file(event):
-            # Make sure we're in the main thread
-            self.root.after(100, self.play_next)
+            if not self.skip_next_auto_play:
+                # Make sure we're in the main thread
+                self.root.after(100, self.auto_play_next)
+            else:
+                # Reset the flag after using it
+                self.skip_next_auto_play = False
         
         self.current_playlist_path = None
         self.music_list = []
@@ -87,7 +94,7 @@ class PyPlaylistApp:
         return ImageTk.PhotoImage(img)
 
     def load_playlists(self):
-        # Save the theme button if it already exists
+        # Save theme button if it already exists
         keep_theme_button = self.theme_button
         
         # Remove all existing widgets
@@ -97,7 +104,7 @@ class PyPlaylistApp:
         header = tk.Label(self.playlist_frame, text="🎵 Your Playlists", font=("Arial", 18), bg=self.bg_color, fg=self.text_color)
         header.pack(pady=20)
         
-        # Recreate the theme button
+        # Recreate theme button
         self.theme_button = tk.Button(self.playlist_frame, text="Change Theme", command=self.toggle_theme)
         self.theme_button.pack(pady=10)
 
@@ -148,7 +155,7 @@ class PyPlaylistApp:
                     dest = os.path.join(THUMBNAIL_DIR, f"{name}.png")
                     img.save(dest)
             except Exception as e:
-                messagebox.showwarning("Invalid thumbnail", f"Thumbnail error: {e}\nUsing default thumbnail.")
+                messagebox.showwarning("Invalid Thumbnail", f"Thumbnail error: {e}\nUsing default thumbnail.")
         else:
             default = os.path.join(THUMBNAIL_DIR, f"{name}.png")
             Image.open(DEFAULT_THUMBNAIL).save(default)
@@ -157,8 +164,8 @@ class PyPlaylistApp:
 
     def show_context_menu(self, event, playlist_name):
         menu = tk.Menu(self.root, tearoff=0)
-        menu.add_command(label="Change thumbnail", command=lambda: self.change_thumbnail(playlist_name))
-        menu.add_command(label="Delete playlist", command=lambda: self.delete_playlist(playlist_name))
+        menu.add_command(label="Change Thumbnail", command=lambda: self.change_thumbnail(playlist_name))
+        menu.add_command(label="Delete Playlist", command=lambda: self.delete_playlist(playlist_name))
         menu.tk_popup(event.x_root, event.y_root)
 
     def change_thumbnail(self, playlist_name):
@@ -172,7 +179,7 @@ class PyPlaylistApp:
                     img.save(dest)
                     self.load_playlists()
             except Exception as e:
-                messagebox.showerror("Thumbnail error", f"Unable to change image: {e}")
+                messagebox.showerror("Thumbnail Error", f"Unable to change image: {e}")
 
     def delete_playlist(self, playlist_name):
         if messagebox.askyesno("Delete", f"Delete playlist '{playlist_name}'?"):
@@ -209,7 +216,7 @@ class PyPlaylistApp:
         tk.Button(controls, text="⏭", command=self.play_next).pack(side=tk.LEFT, padx=5)
         tk.Button(controls, text="🔀", command=self.shuffle_play).pack(side=tk.LEFT, padx=5)
 
-        # Add volume control
+        # Add volume controller
         volume_frame = tk.Frame(self.music_frame, bg=self.bg_color)
         volume_frame.pack(pady=10)
 
@@ -249,7 +256,7 @@ class PyPlaylistApp:
             messagebox.showerror("Error", "File not found.")
             return
 
-        # Start the music
+        # Start music
         self.player.stop()
         self.player.play(path)
         self.current_music_path = path
@@ -261,28 +268,56 @@ class PyPlaylistApp:
         # Update progress in a thread
         self.update_progress()
         
-        # Visually select the current track in the list
+        # Visually select current track in the list
         self.music_listbox.selection_clear(0, tk.END)
         self.music_listbox.selection_set(self.current_index)
         self.music_listbox.see(self.current_index)
 
+    def auto_play_next(self):
+        """This method is called automatically when a song ends"""
+        if not self.music_list:
+            return
+            
+        self.current_index += 1
+        if self.current_index >= len(self.music_list):
+            self.current_index = 0
+            
+        next_song = self.music_list[self.current_index]
+        next_path = os.path.join(self.current_playlist_path, next_song)
+        self.play_music(next_path)
+
     def play_next(self):
-        if self.music_list:
-            self.current_index += 1
-            if self.current_index >= len(self.music_list):
-                self.current_index = 0
-            next_song = self.music_list[self.current_index]
-            next_path = os.path.join(self.current_playlist_path, next_song)
-            self.play_music(next_path)
+        """This method is called when the user clicks the next button"""
+        if not self.music_list:
+            return
+           
+        # Activate flag to prevent auto-play
+        self.skip_next_auto_play = True
+        
+        # Move to next index
+        self.current_index += 1
+        if self.current_index >= len(self.music_list):
+            self.current_index = 0
+            
+        next_song = self.music_list[self.current_index]
+        next_path = os.path.join(self.current_playlist_path, next_song)
+        
+        # Play the new track
+        self.play_music(next_path)
 
     def play_previous(self):
-        if self.music_list:
-            self.current_index -= 1
-            if self.current_index < 0:
-                self.current_index = len(self.music_list) - 1
-            prev_song = self.music_list[self.current_index]
-            prev_path = os.path.join(self.current_playlist_path, prev_song)
-            self.play_music(prev_path)
+        if not self.music_list:
+            return
+            
+        # Activate flag to prevent auto-play
+        self.skip_next_auto_play = True
+        
+        self.current_index -= 1
+        if self.current_index < 0:
+            self.current_index = len(self.music_list) - 1
+        prev_song = self.music_list[self.current_index]
+        prev_path = os.path.join(self.current_playlist_path, prev_song)
+        self.play_music(prev_path)
 
     def toggle_pause(self):
         if self.player:
@@ -291,11 +326,16 @@ class PyPlaylistApp:
             self.pause_btn.config(text="▶" if self.is_paused else "⏸")
 
     def shuffle_play(self):
-        if self.music_list:
-            self.current_index = random.randint(0, len(self.music_list) - 1)
-            song = self.music_list[self.current_index]
-            full_path = os.path.join(self.current_playlist_path, song)
-            self.play_music(full_path)
+        if not self.music_list:
+            return
+            
+        # Activate flag to prevent auto-play
+        self.skip_next_auto_play = True
+        
+        self.current_index = random.randint(0, len(self.music_list) - 1)
+        song = self.music_list[self.current_index]
+        full_path = os.path.join(self.current_playlist_path, song)
+        self.play_music(full_path)
 
     def update_progress(self):
         """Updates the time progress synchronously with the GUI."""

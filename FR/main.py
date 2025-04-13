@@ -59,14 +59,21 @@ class PyPlaylistApp:
         # On crée d'abord le bouton de thème avant d'appeler load_playlists
         self.theme_button = None
         
+        # Drapeau pour contrôler l'auto-play
+        self.skip_next_auto_play = False
+        
         # Initialiser le lecteur MPV avec un gestionnaire d'événements pour la fin du fichier
         self.player = mpv.MPV(input_default_bindings=True, input_vo_keyboard=True)
         
         # Ajouter un écouteur d'événement pour détecter la fin du fichier
         @self.player.event_callback('end-file')
         def on_end_file(event):
-            # Assurer que nous sommes dans le thread principal
-            self.root.after(100, self.play_next)
+            if not self.skip_next_auto_play:
+                # Assurer que nous sommes dans le thread principal
+                self.root.after(100, self.auto_play_next)
+            else:
+                # Réinitialiser le drapeau après l'avoir utilisé
+                self.skip_next_auto_play = False
         
         self.current_playlist_path = None
         self.music_list = []
@@ -266,23 +273,51 @@ class PyPlaylistApp:
         self.music_listbox.selection_set(self.current_index)
         self.music_listbox.see(self.current_index)
 
+    def auto_play_next(self):
+        """Cette méthode est appelée automatiquement lorsqu'une chanson se termine"""
+        if not self.music_list:
+            return
+            
+        self.current_index += 1
+        if self.current_index >= len(self.music_list):
+            self.current_index = 0
+            
+        next_song = self.music_list[self.current_index]
+        next_path = os.path.join(self.current_playlist_path, next_song)
+        self.play_music(next_path)
+
     def play_next(self):
-        if self.music_list:
-            self.current_index += 1
-            if self.current_index >= len(self.music_list):
-                self.current_index = 0
-            next_song = self.music_list[self.current_index]
-            next_path = os.path.join(self.current_playlist_path, next_song)
-            self.play_music(next_path)
+        """Cette méthode est appelée lorsque l'utilisateur clique sur le bouton suivant"""
+        if not self.music_list:
+            return
+           
+        # Activer le drapeau pour empêcher l'auto-play
+        self.skip_next_auto_play = True
+        
+        # Passer à l'index suivant
+        self.current_index += 1
+        if self.current_index >= len(self.music_list):
+            self.current_index = 0
+            
+        next_song = self.music_list[self.current_index]
+        next_path = os.path.join(self.current_playlist_path, next_song)
+        
+        # Jouer le nouveau morceau
+        self.play_music(next_path)
 
     def play_previous(self):
-        if self.music_list:
-            self.current_index -= 1
-            if self.current_index < 0:
-                self.current_index = len(self.music_list) - 1
-            prev_song = self.music_list[self.current_index]
-            prev_path = os.path.join(self.current_playlist_path, prev_song)
-            self.play_music(prev_path)
+        if not self.music_list:
+            return
+            
+        # Activer le drapeau pour empêcher l'auto-play
+        self.skip_next_auto_play = True
+        
+        self.current_index -= 1
+        if self.current_index < 0:
+            self.current_index = len(self.music_list) - 1
+        prev_song = self.music_list[self.current_index]
+        prev_path = os.path.join(self.current_playlist_path, prev_song)
+        self.play_music(prev_path)
 
     def toggle_pause(self):
         if self.player:
@@ -291,11 +326,16 @@ class PyPlaylistApp:
             self.pause_btn.config(text="▶" if self.is_paused else "⏸")
 
     def shuffle_play(self):
-        if self.music_list:
-            self.current_index = random.randint(0, len(self.music_list) - 1)
-            song = self.music_list[self.current_index]
-            full_path = os.path.join(self.current_playlist_path, song)
-            self.play_music(full_path)
+        if not self.music_list:
+            return
+            
+        # Activer le drapeau pour empêcher l'auto-play
+        self.skip_next_auto_play = True
+        
+        self.current_index = random.randint(0, len(self.music_list) - 1)
+        song = self.music_list[self.current_index]
+        full_path = os.path.join(self.current_playlist_path, song)
+        self.play_music(full_path)
 
     def update_progress(self):
         """Met à jour la progression du temps de manière synchrone avec l'interface graphique."""
