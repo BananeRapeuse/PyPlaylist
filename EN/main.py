@@ -1,7 +1,7 @@
 import os
 import sys
 
-# Path
+# Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 dll_path = os.path.join(BASE_DIR, "mpv")
 os.environ["PATH"] = dll_path + os.pathsep + os.environ["PATH"]
@@ -19,7 +19,7 @@ import threading
 import time
 import random
 
-# Creating of folder if they're missing
+# Create directories if missing
 os.makedirs(PLAYLISTS_DIR, exist_ok=True)
 os.makedirs(THUMBNAIL_DIR, exist_ok=True)
 
@@ -55,9 +55,19 @@ class PyPlaylistApp:
         self.thumbnail_cache = {}
         self.playlist_frame = tk.Frame(root, bg=self.bg_color)
         self.playlist_frame.pack(fill=tk.BOTH, expand=True)
-        self.load_playlists()
-
+        
+        # Create the theme button before calling load_playlists
+        self.theme_button = None
+        
+        # Initialize the MPV player with an event handler for end of file
         self.player = mpv.MPV(input_default_bindings=True, input_vo_keyboard=True)
+        
+        # Add an event listener to detect end of file
+        @self.player.event_callback('end-file')
+        def on_end_file(event):
+            # Make sure we're in the main thread
+            self.root.after(100, self.play_next)
+        
         self.current_playlist_path = None
         self.music_list = []
         self.current_index = 0
@@ -65,10 +75,9 @@ class PyPlaylistApp:
         self.progress_label = None
         self.current_song_label = None
         self.current_music_path = None
-
-        # Button for theme changing
-        self.theme_button = tk.Button(self.playlist_frame, text="Change theme", command=self.toggle_theme)
-        self.theme_button.pack(pady=10)
+        
+        # Load playlists
+        self.load_playlists()
 
     def load_thumbnail(self, playlist_name):
         path = os.path.join(THUMBNAIL_DIR, f"{playlist_name}.png")
@@ -78,11 +87,19 @@ class PyPlaylistApp:
         return ImageTk.PhotoImage(img)
 
     def load_playlists(self):
+        # Save the theme button if it already exists
+        keep_theme_button = self.theme_button
+        
+        # Remove all existing widgets
         for widget in self.playlist_frame.winfo_children():
             widget.destroy()
 
         header = tk.Label(self.playlist_frame, text="🎵 Your Playlists", font=("Arial", 18), bg=self.bg_color, fg=self.text_color)
         header.pack(pady=20)
+        
+        # Recreate the theme button
+        self.theme_button = tk.Button(self.playlist_frame, text="Change Theme", command=self.toggle_theme)
+        self.theme_button.pack(pady=10)
 
         grid_frame = tk.Frame(self.playlist_frame, bg=self.bg_color)
         grid_frame.pack(pady=10)
@@ -118,7 +135,7 @@ class PyPlaylistApp:
             return
         playlist_path = os.path.join(PLAYLISTS_DIR, name)
         if os.path.exists(playlist_path):
-            messagebox.showerror("Error", "This playlist already exist.")
+            messagebox.showerror("Error", "This playlist already exists.")
             return
         os.makedirs(playlist_path)
 
@@ -127,11 +144,11 @@ class PyPlaylistApp:
             try:
                 with Image.open(img_path) as img:
                     if img.size != (512, 512):
-                        raise ValueError("The picture must be in 512x512")
+                        raise ValueError("Image must be 512x512")
                     dest = os.path.join(THUMBNAIL_DIR, f"{name}.png")
                     img.save(dest)
             except Exception as e:
-                messagebox.showwarning("Invalid thumbnail", f"Thumbnail error : {e}\nUsing default blank thumbnail.")
+                messagebox.showwarning("Invalid thumbnail", f"Thumbnail error: {e}\nUsing default thumbnail.")
         else:
             default = os.path.join(THUMBNAIL_DIR, f"{name}.png")
             Image.open(DEFAULT_THUMBNAIL).save(default)
@@ -140,7 +157,7 @@ class PyPlaylistApp:
 
     def show_context_menu(self, event, playlist_name):
         menu = tk.Menu(self.root, tearoff=0)
-        menu.add_command(label="Modify thumbnail", command=lambda: self.change_thumbnail(playlist_name))
+        menu.add_command(label="Change thumbnail", command=lambda: self.change_thumbnail(playlist_name))
         menu.add_command(label="Delete playlist", command=lambda: self.delete_playlist(playlist_name))
         menu.tk_popup(event.x_root, event.y_root)
 
@@ -150,15 +167,15 @@ class PyPlaylistApp:
             try:
                 with Image.open(path) as img:
                     if img.size != (512, 512):
-                        raise ValueError("The picture must be in 512x512 pixels")
+                        raise ValueError("Image must be 512x512 pixels")
                     dest = os.path.join(THUMBNAIL_DIR, f"{playlist_name}.png")
                     img.save(dest)
                     self.load_playlists()
             except Exception as e:
-                messagebox.showerror("Thumbnail error", f"Impossible to change the thumbnail : {e}")
+                messagebox.showerror("Thumbnail error", f"Unable to change image: {e}")
 
     def delete_playlist(self, playlist_name):
-        if messagebox.askyesno("Delete", f"Delete the playlist '{playlist_name}' ?"):
+        if messagebox.askyesno("Delete", f"Delete playlist '{playlist_name}'?"):
             import shutil
             shutil.rmtree(os.path.join(PLAYLISTS_DIR, playlist_name), ignore_errors=True)
             thumb = os.path.join(THUMBNAIL_DIR, f"{playlist_name}.png")
@@ -175,7 +192,7 @@ class PyPlaylistApp:
                              bg=self.bg_color, font=("Arial", 12))
         back_btn.pack(anchor="w", padx=10, pady=10)
 
-        label = tk.Label(self.music_frame, text=f"Playlist : {playlist_name}", font=("Arial", 16), bg=self.bg_color, fg=self.text_color)
+        label = tk.Label(self.music_frame, text=f"Playlist: {playlist_name}", font=("Arial", 16), bg=self.bg_color, fg=self.text_color)
         label.pack()
 
         self.current_song_label = tk.Label(self.music_frame, text="", font=("Arial", 12), bg=self.bg_color, fg=self.text_color)
@@ -192,7 +209,7 @@ class PyPlaylistApp:
         tk.Button(controls, text="⏭", command=self.play_next).pack(side=tk.LEFT, padx=5)
         tk.Button(controls, text="🔀", command=self.shuffle_play).pack(side=tk.LEFT, padx=5)
 
-        # Add the volume control
+        # Add volume control
         volume_frame = tk.Frame(self.music_frame, bg=self.bg_color)
         volume_frame.pack(pady=10)
 
@@ -215,7 +232,7 @@ class PyPlaylistApp:
         self.music_listbox.bind("<<ListboxSelect>>", self.on_select_music)
 
     def set_volume(self, volume):
-        """Update MPV."""
+        """Updates the mpv player volume."""
         volume = int(volume)
         self.player.volume = volume
 
@@ -232,7 +249,7 @@ class PyPlaylistApp:
             messagebox.showerror("Error", "File not found.")
             return
 
-        # Launch the music
+        # Start the music
         self.player.stop()
         self.player.play(path)
         self.current_music_path = path
@@ -241,8 +258,13 @@ class PyPlaylistApp:
         self.is_paused = False
         self.pause_btn.config(text="⏸")
         
-        # Update the progress in a thread
+        # Update progress in a thread
         self.update_progress()
+        
+        # Visually select the current track in the list
+        self.music_listbox.selection_clear(0, tk.END)
+        self.music_listbox.selection_set(self.current_index)
+        self.music_listbox.see(self.current_index)
 
     def play_next(self):
         if self.music_list:
@@ -276,7 +298,7 @@ class PyPlaylistApp:
             self.play_music(full_path)
 
     def update_progress(self):
-        """Update the timeline in direct."""
+        """Updates the time progress synchronously with the GUI."""
         def update():
             current = self.player.playback_time
             duration = self.player.duration
@@ -296,7 +318,7 @@ class PyPlaylistApp:
         self.load_playlists()
 
     def toggle_theme(self):
-        """Go to dark theme."""
+        """Toggle between light and dark theme."""
         if self.current_theme == "light":
             self.current_theme = "dark"
         else:
@@ -305,7 +327,7 @@ class PyPlaylistApp:
         self.update_theme()
 
     def update_theme(self):
-        """Update the theme colors."""
+        """Update interface colors based on theme."""
         if self.current_theme == "light":
             self.bg_color = "white"
             self.text_color = "black"
@@ -313,11 +335,13 @@ class PyPlaylistApp:
             self.bg_color = "#1c1c18"
             self.text_color = "white"
 
-        # Home theme update
+        # Update main window background
         self.root.configure(bg=self.bg_color)
 
-        # All other parts theme update
+        # Update colors in all parts of the application
         self.playlist_frame.configure(bg=self.bg_color)
+        
+        # Update theme by reloading playlists
         self.load_playlists()
 
 

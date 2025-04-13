@@ -55,9 +55,19 @@ class PyPlaylistApp:
         self.thumbnail_cache = {}
         self.playlist_frame = tk.Frame(root, bg=self.bg_color)
         self.playlist_frame.pack(fill=tk.BOTH, expand=True)
-        self.load_playlists()
-
+        
+        # On crée d'abord le bouton de thème avant d'appeler load_playlists
+        self.theme_button = None
+        
+        # Initialiser le lecteur MPV avec un gestionnaire d'événements pour la fin du fichier
         self.player = mpv.MPV(input_default_bindings=True, input_vo_keyboard=True)
+        
+        # Ajouter un écouteur d'événement pour détecter la fin du fichier
+        @self.player.event_callback('end-file')
+        def on_end_file(event):
+            # Assurer que nous sommes dans le thread principal
+            self.root.after(100, self.play_next)
+        
         self.current_playlist_path = None
         self.music_list = []
         self.current_index = 0
@@ -65,10 +75,9 @@ class PyPlaylistApp:
         self.progress_label = None
         self.current_song_label = None
         self.current_music_path = None
-
-        # Ajout du bouton pour changer le thème
-        self.theme_button = tk.Button(self.playlist_frame, text="Changer de thème", command=self.toggle_theme)
-        self.theme_button.pack(pady=10)
+        
+        # Charger les playlists
+        self.load_playlists()
 
     def load_thumbnail(self, playlist_name):
         path = os.path.join(THUMBNAIL_DIR, f"{playlist_name}.png")
@@ -78,11 +87,19 @@ class PyPlaylistApp:
         return ImageTk.PhotoImage(img)
 
     def load_playlists(self):
+        # Sauvegarde le bouton de thème s'il existe déjà
+        keep_theme_button = self.theme_button
+        
+        # Supprimer tous les widgets existants
         for widget in self.playlist_frame.winfo_children():
             widget.destroy()
 
         header = tk.Label(self.playlist_frame, text="🎵 Vos Playlists", font=("Arial", 18), bg=self.bg_color, fg=self.text_color)
         header.pack(pady=20)
+        
+        # Recréer le bouton de thème
+        self.theme_button = tk.Button(self.playlist_frame, text="Changer de thème", command=self.toggle_theme)
+        self.theme_button.pack(pady=10)
 
         grid_frame = tk.Frame(self.playlist_frame, bg=self.bg_color)
         grid_frame.pack(pady=10)
@@ -232,7 +249,7 @@ class PyPlaylistApp:
             messagebox.showerror("Erreur", "Fichier introuvable.")
             return
 
-        # Lancer la musique sans observer l'événement end-file
+        # Lancer la musique
         self.player.stop()
         self.player.play(path)
         self.current_music_path = path
@@ -243,6 +260,11 @@ class PyPlaylistApp:
         
         # Mise à jour de la progression dans un thread
         self.update_progress()
+        
+        # Sélectionner visuellement la piste courante dans la liste
+        self.music_listbox.selection_clear(0, tk.END)
+        self.music_listbox.selection_set(self.current_index)
+        self.music_listbox.see(self.current_index)
 
     def play_next(self):
         if self.music_list:
@@ -318,6 +340,8 @@ class PyPlaylistApp:
 
         # Mise à jour des couleurs dans toutes les parties de l'application
         self.playlist_frame.configure(bg=self.bg_color)
+        
+        # Mettre à jour le thème en rechargeant les playlists
         self.load_playlists()
 
 
