@@ -36,6 +36,9 @@ For seting your discord activity as "Playing PyPlaylist" and have informations i
 - [ ] Good UI Design with cool effects and cool buttons
 - [ ] Flags for start with cmd/PS
 
+# Issues / Suggestions
+If you find an [issue](https://github.com/BananeRapeuse/PyPlaylist/issues/new) or if you've a suggestion please [open an issue](https://github.com/BananeRapeuse/PyPlaylist/issues/new)
+
 # Credits
 
 - [Ph0qu3_111](https://github.com/bananerapeuse) (me) for the software
