@@ -10,6 +10,13 @@ MPV_PATH = os.path.join(BASE_DIR, "mpv", "mpv.exe")
 THUMBNAIL_DIR = os.path.join(BASE_DIR, "contents", "PNGs", "thumbnails")
 DEFAULT_THUMBNAIL = os.path.join(BASE_DIR, "contents", "PNGs", "blank_t.png")
 
+# List of supported audio formats
+SUPPORTED_AUDIO_FORMATS = [
+    ".mp3", ".aac", ".ogg", ".oga", ".flac", ".wav", ".alac", 
+    ".opus", ".wma", ".m4a", ".aiff", ".pcm", ".ape", ".tta", 
+    ".dsf", ".dff", ".mpc", ".amr"
+]
+
 import subprocess
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog
@@ -18,10 +25,21 @@ import mpv
 import threading
 import time
 import random
+# Import pypresence for Discord Rich Presence
+try:
+    from pypresence import Presence
+    DISCORD_AVAILABLE = True
+except ImportError:
+    DISCORD_AVAILABLE = False
+    print("Module pypresence not found. Discord integration will not be available.")
 
-# Create folders if missing
+# Create directories if missing
 os.makedirs(PLAYLISTS_DIR, exist_ok=True)
 os.makedirs(THUMBNAIL_DIR, exist_ok=True)
+
+# Discord application ID (you need to create your own Discord application)
+# Replace this value with your own Discord client ID
+DISCORD_CLIENT_ID = "1361395271183106248"
 
 def get_window_size(sw, sh):
     if sw <= 1920:
@@ -62,14 +80,14 @@ class PyPlaylistApp:
         # Flag to control auto-play
         self.skip_next_auto_play = False
         
-        # Initialize MPV player with event handler for end of file
+        # Initialize MPV player with event handlers for end of file
         self.player = mpv.MPV(input_default_bindings=True, input_vo_keyboard=True)
         
         # Add event listener to detect end of file
         @self.player.event_callback('end-file')
         def on_end_file(event):
             if not self.skip_next_auto_play:
-                # Make sure we're in the main thread
+                # Ensure we're in the main thread
                 self.root.after(100, self.auto_play_next)
             else:
                 # Reset the flag after using it
@@ -83,8 +101,65 @@ class PyPlaylistApp:
         self.current_song_label = None
         self.current_music_path = None
         
+        # Initialize Discord Rich Presence
+        self.discord_rpc = None
+        self.init_discord()
+        
+        # Variable to store current Discord status
+        self.current_discord_status = None
+        
         # Load playlists
         self.load_playlists()
+        
+        # Make sure Discord status is cleared on close
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+
+    def init_discord(self):
+        """Initialize connection with Discord Rich Presence"""
+        if not DISCORD_AVAILABLE:
+            return
+            
+        try:
+            self.discord_rpc = Presence(DISCORD_CLIENT_ID)
+            self.discord_rpc.connect()
+            print("Connected to Discord Rich Presence")
+        except Exception as e:
+            print(f"Error connecting to Discord: {e}")
+            self.discord_rpc = None
+
+    def update_discord_presence(self, song_name=None, playlist_name=None, is_paused=False):
+        """Update Discord Rich Presence status"""
+        if not self.discord_rpc:
+            return
+            
+        try:
+            if song_name:
+                # Remove file extension if present
+                file_name, file_ext = os.path.splitext(song_name)
+                if file_ext.lower() in SUPPORTED_AUDIO_FORMATS:
+                    song_name = file_name
+                    
+                state = f"Paused" if is_paused else f"Listening"
+                details = f"PyPlaylist | {song_name}"
+                
+                if playlist_name:
+                    state += f" - Playlist: {playlist_name}"
+                
+                # Update Discord status
+                self.discord_rpc.update(
+                    state=state,
+                    details=details,
+                    large_image="music",  # Key of an image uploaded to your Discord application
+                    large_text="PyPlaylist",
+                    start=int(time.time()) if not is_paused else None  # Elapsed time if not paused
+                )
+                self.current_discord_status = song_name
+            else:
+                # Clear status when no music is playing
+                self.discord_rpc.clear()
+                self.current_discord_status = None
+        except Exception as e:
+            print(f"Error updating Discord status: {e}")
 
     def load_thumbnail(self, playlist_name):
         path = os.path.join(THUMBNAIL_DIR, f"{playlist_name}.png")
@@ -164,9 +239,80 @@ class PyPlaylistApp:
 
     def show_context_menu(self, event, playlist_name):
         menu = tk.Menu(self.root, tearoff=0)
+        menu.add_command(label="Add Music", command=lambda: self.add_music_to_playlist(playlist_name))
         menu.add_command(label="Change Thumbnail", command=lambda: self.change_thumbnail(playlist_name))
         menu.add_command(label="Delete Playlist", command=lambda: self.delete_playlist(playlist_name))
         menu.tk_popup(event.x_root, event.y_root)
+
+    def add_music_to_playlist(self, playlist_name):
+        playlist_path = os.path.join(PLAYLISTS_DIR, playlist_name)
+        
+        # Build filter for file selection dialog
+        filetypes = []
+        for ext in SUPPORTED_AUDIO_FORMATS:
+            desc = f"{ext.upper()[1:]} Audio"
+            filetypes.append((desc, f"*{ext}"))
+        
+        # Add "All audio files" option
+        all_formats = " ".join(f"*{ext}" for ext in SUPPORTED_AUDIO_FORMATS)
+        filetypes.insert(0, ("All audio files", all_formats))
+        
+        # Open dialog to select files
+        files = filedialog.askopenfilenames(
+            title="Add music to playlist",
+            filetypes=filetypes
+        )
+        
+        if not files:
+            return
+        
+        # Copy selected files to playlist folder
+        for file_path in files:
+            file_name = os.path.basename(file_path)
+            dest_path = os.path.join(playlist_path, file_name)
+            
+            if os.path.exists(dest_path):
+                if not messagebox.askyesno("File exists", 
+                    f"The file {file_name} already exists in the playlist.\nDo you want to replace it?"):
+                    continue
+            
+            try:
+                import shutil
+                shutil.copy2(file_path, dest_path)
+            except Exception as e:
+                messagebox.showerror("Error", f"Unable to add {file_name}: {e}")
+        
+        # If playlist is currently open, update the list
+        if hasattr(self, 'current_playlist_path') and self.current_playlist_path == playlist_path:
+            self.update_music_list()
+
+    def update_music_list(self):
+        if not hasattr(self, 'music_listbox'):
+            return
+            
+        # Save current selection
+        current_selection = self.music_listbox.curselection()
+        
+        # Clear and rebuild the list
+        self.music_listbox.delete(0, tk.END)
+        self.music_list = []
+        
+        # Get all audio files in directory
+        for file in os.listdir(self.current_playlist_path):
+            ext = os.path.splitext(file)[1].lower()
+            if ext in SUPPORTED_AUDIO_FORMATS:
+                self.music_list.append(file)
+        
+        # Sort list alphabetically
+        self.music_list.sort()
+        
+        # Fill listbox
+        for music in self.music_list:
+            self.music_listbox.insert(tk.END, music)
+        
+        # Restore selection if possible
+        if current_selection and current_selection[0] < len(self.music_list):
+            self.music_listbox.selection_set(current_selection[0])
 
     def change_thumbnail(self, playlist_name):
         path = filedialog.askopenfilename(title="New thumbnail (512x512 PNG)", filetypes=[("PNG", "*.png")])
@@ -179,7 +325,7 @@ class PyPlaylistApp:
                     img.save(dest)
                     self.load_playlists()
             except Exception as e:
-                messagebox.showerror("Thumbnail Error", f"Unable to change image: {e}")
+                messagebox.showerror("Thumbnail error", f"Unable to change image: {e}")
 
     def delete_playlist(self, playlist_name):
         if messagebox.askyesno("Delete", f"Delete playlist '{playlist_name}'?"):
@@ -224,14 +370,31 @@ class PyPlaylistApp:
         volume_label.pack(side=tk.LEFT, padx=5)
 
         self.volume_scale = tk.Scale(volume_frame, from_=0, to_=100, orient=tk.HORIZONTAL, bg=self.bg_color, command=self.set_volume)
-        self.volume_scale.set(50)  # Initial volume at 50%
+        self.volume_scale.set(50)  # Initial volume 50%
         self.volume_scale.pack(side=tk.LEFT)
+
+        # Add checkbox for Discord integration
+        if DISCORD_AVAILABLE:
+            self.discord_var = tk.IntVar(value=1)  # Enabled by default
+            discord_check = tk.Checkbutton(self.music_frame, text="Show on Discord", 
+                                          variable=self.discord_var, bg=self.bg_color, fg=self.text_color,
+                                          activebackground=self.bg_color)
+            discord_check.pack(pady=5)
 
         self.music_listbox = tk.Listbox(self.music_frame, font=("Arial", 12), selectbackground="#d0d0d0")
         self.music_listbox.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         self.current_playlist_path = os.path.join(PLAYLISTS_DIR, playlist_name)
-        self.music_list = [f for f in os.listdir(self.current_playlist_path) if f.endswith(".mp3")]
+        self.music_list = []
+        
+        # Get all recognized audio files
+        for file in os.listdir(self.current_playlist_path):
+            ext = os.path.splitext(file)[1].lower()
+            if ext in SUPPORTED_AUDIO_FORMATS:
+                self.music_list.append(file)
+        
+        # Sort the list
+        self.music_list.sort()
 
         for music in self.music_list:
             self.music_listbox.insert(tk.END, music)
@@ -239,7 +402,7 @@ class PyPlaylistApp:
         self.music_listbox.bind("<<ListboxSelect>>", self.on_select_music)
 
     def set_volume(self, volume):
-        """Updates the mpv player volume."""
+        """Update mpv player volume."""
         volume = int(volume)
         self.player.volume = volume
 
@@ -260,15 +423,22 @@ class PyPlaylistApp:
         self.player.stop()
         self.player.play(path)
         self.current_music_path = path
-
-        self.current_song_label.config(text=os.path.basename(path))
+        
+        song_name = os.path.basename(path)
+        playlist_name = os.path.basename(self.current_playlist_path)
+        
+        self.current_song_label.config(text=song_name)
         self.is_paused = False
         self.pause_btn.config(text="⏸")
+        
+        # Update Discord status if enabled
+        if hasattr(self, 'discord_var') and self.discord_var.get() == 1 and DISCORD_AVAILABLE:
+            self.update_discord_presence(song_name, playlist_name, is_paused=False)
         
         # Update progress in a thread
         self.update_progress()
         
-        # Visually select current track in the list
+        # Visually select current track in list
         self.music_listbox.selection_clear(0, tk.END)
         self.music_listbox.selection_set(self.current_index)
         self.music_listbox.see(self.current_index)
@@ -287,7 +457,7 @@ class PyPlaylistApp:
         self.play_music(next_path)
 
     def play_next(self):
-        """This method is called when the user clicks the next button"""
+        """This method is called when user clicks the next button"""
         if not self.music_list:
             return
            
@@ -302,7 +472,7 @@ class PyPlaylistApp:
         next_song = self.music_list[self.current_index]
         next_path = os.path.join(self.current_playlist_path, next_song)
         
-        # Play the new track
+        # Play new track
         self.play_music(next_path)
 
     def play_previous(self):
@@ -324,6 +494,12 @@ class PyPlaylistApp:
             self.is_paused = not self.is_paused
             self.player.pause = self.is_paused
             self.pause_btn.config(text="▶" if self.is_paused else "⏸")
+            
+            # Update Discord status to indicate pause
+            if hasattr(self, 'discord_var') and self.discord_var.get() == 1 and DISCORD_AVAILABLE and self.current_music_path:
+                song_name = os.path.basename(self.current_music_path)
+                playlist_name = os.path.basename(self.current_playlist_path)
+                self.update_discord_presence(song_name, playlist_name, is_paused=self.is_paused)
 
     def shuffle_play(self):
         if not self.music_list:
@@ -338,7 +514,7 @@ class PyPlaylistApp:
         self.play_music(full_path)
 
     def update_progress(self):
-        """Updates the time progress synchronously with the GUI."""
+        """Update time progress synchronously with GUI."""
         def update():
             current = self.player.playback_time
             duration = self.player.duration
@@ -353,6 +529,11 @@ class PyPlaylistApp:
         return f"{int(m):02}:{int(s):02}"
 
     def back_to_playlists(self):
+        # Stop music and clear Discord status
+        self.player.stop()
+        if DISCORD_AVAILABLE and self.discord_rpc:
+            self.update_discord_presence(None)
+            
         self.music_frame.pack_forget()
         self.playlist_frame.pack(fill=tk.BOTH, expand=True)
         self.load_playlists()
@@ -383,9 +564,35 @@ class PyPlaylistApp:
         
         # Update theme by reloading playlists
         self.load_playlists()
+        
+    def on_close(self):
+        """Method called when closing the application"""
+        # Clear Discord status before closing
+        if DISCORD_AVAILABLE and self.discord_rpc:
+            try:
+                self.discord_rpc.clear()
+                self.discord_rpc.close()
+            except:
+                pass
+                
+        self.root.destroy()
 
 
 if __name__ == "__main__":
+    # Check if pypresence is installed, otherwise offer to install it
+    if not DISCORD_AVAILABLE:
+        try:
+            response = messagebox.askyesno(
+                "Missing module", 
+                "The 'pypresence' module is necessary for Discord integration.\nDo you want to install it now?"
+            )
+            if response:
+                subprocess.check_call([sys.executable, "-m", "pip", "install", "pypresence"])
+                messagebox.showinfo("Installation successful", "The module has been installed. Please restart the application.")
+                sys.exit(0)
+        except Exception as e:
+            messagebox.showerror("Installation error", f"Unable to install the module: {e}")
+    
     root = tk.Tk()
     app = PyPlaylistApp(root)
     root.mainloop()
