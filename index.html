@@ -1,1 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyPlaylist🎵</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #1d1d1d;
+            color: #e5e5e5;
+        }
 
+        header {
+            background-color: #1a1a1a;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+
+        header img {
+            height: 50px;
+        }
+
+        nav a {
+            color: #e5e5e5;
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1.2rem;
+        }
+
+        nav a:hover {
+            color: #007bff;
+        }
+
+        .main-content {
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .main-content h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .main-content p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .buttons a {
+            text-decoration: none;
+            color: #fff;
+            background-color: #007bff;
+            padding: 1rem 2rem;
+            border-radius: 5px;
+            font-size: 1.2rem;
+        }
+
+        .buttons a:hover {
+            background-color: #0056b3;
+        }
+
+        .faq {
+            padding: 2rem;
+            background-color: #1a1a1a;
+            margin-top: 2rem;
+            border-top: 1px solid #333;
+        }
+
+        .faq h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #fff;
+        }
+
+        .faq p {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            color: #ccc;
+        }
+
+        .faq p span {
+            font-weight: bold;
+            color: #e5e5e5;
+        }
+
+        footer {
+            background-color: #1a1a1a;
+            padding: 1rem;
+            text-align: center;
+            border-top: 1px solid #333;
+        }
+
+        footer p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+    <script>
+    async function fetchLatestRelease() {
+        try {
+            const response = await fetch('https://api.github.com/repos/BananeRapeuse/PyPlaylist/releases/latest');
+            const data = await response.json();
+            const latestVersion = data.tag_name; // Assure que ton tag est bien nommé par la version (ex: "v1.0.0")
+            document.getElementById('latest-version').textContent = `Last version: ${latestVersion}`;
+        } catch (error) {
+            console.error('Error fetching the latest release:', error);
+        }
+    }
+
+    // Appeler la fonction lorsque la page se charge
+    window.onload = fetchLatestRelease;
+</script>
+<body>
+    <header>
+        <img src="https://github.com/BananeRapeuse/PyPlaylist/raw/main/PyPlaylist.png" alt="PyPlaylist.png">
+        <nav>
+            <a href="privacy-policy.html">Privacy Policy</a>
+        </nav>
+    </header>
+    <main class="main-content">
+    <h1>Welcome to the PyPlaylist official website!</h1>
+    <p>A cool Python <🐍> Software to create playlist from downloaded songs</p>
+    <div class="buttons">
+        <a href="https://github.com/BananeRapeuse/PyPlaylist/releases">Download for Windows</a>
+    </div>
+        <p> </p>
+    <div class="buttons">
+        <a href="https://github.com/BananeRapeuse/PyPlaylist/">GitHub</a>
+    </div>
+    <p id="latest-version" style="font-size: 1rem; color: #e5e5e5;">Loading latest version...</p>
+    <p>If you want to contribute to the project you can become a tester or open an issue on GitHub</p>
+
+    <section class="features">
+        <h2>Features</h2>
+        <ul>
+            <li style="font-size: 2.1rem;">Languages</li>
+            <li style="font-size: 1.2rem;">English</li>
+            <li style="font-size: 1.2rem;">French</li>
+            <li style="font-size: 1.2rem;">Spannish (comming soon)</li>
+            <li style="font-size: 1.2rem;">Russian (comming soon)</li>
+          
+    </section>
+
+        <section class="faq">
+            <h2>FAQ - PyPlaylist</h2>
+            <p><span>Q: What is PyPlaylist ?</span><br>
+            A: PyPlaylist is a software codded in Python, it's a cool UI playlist manager for the songs you've downloaded on internet</p>
+            
+            <p><span>Q: Which OSs does PyPlaylist compatible with ?</span><br>
+            A: PyPlaylist is only compatible with Windows due to the mpv player that is an exe file. </p>
+
+            <p><span>Q: Does it affect my gaming perf ?</span><br>
+            A: No ! It dosen't affect gaming perf due to the simple fact that is codded with simplicity and no shit like telemetry.</p>
+
+            <p><span>Q: Can I choose to don't show my listening music as a Discord activity?</span><br>
+            A: Yes, before start to play a music just uncheck the "Show in Discord" box</p>
+
+        </section>
+
+                <section class="credits">
+            <h2>Made by:</h2>
+            <div class="credit-item">
+                <img src="https://avatars.githubusercontent.com/u/79283690?v=4" alt="Ph0qu3_111 Profile Picture" style="width:50px; height:50px; border-radius:50%;">
+                <a href="https://github.com/BananeRapeuse" style="margin-left:10px; color: #007bff; text-decoration: none;">Ph0qu3_111 (Natanaël Eloy)</a>
+            </div>
+
+            <h2>Thanks to:</h2>
+    <ul>
+        <li>
+            <img src="https://raw.githubusercontent.com/BananeRapeuse/PyPlaylist/refs/heads/main/credits/high-1744668115.jpg" alt="Outlier Audio" style="width:50px;height:50px;border-radius:50%;">
+            <a href="https://www.youtube.com/@OutlierAudio" style="margin-left:10px; color: #007bff; text-decoration: none;">Outlier Audio</a> for the 1st test song
+        </li>
+        <li>
+            <img src="https://raw.githubusercontent.com/BananeRapeuse/PyPlaylist/refs/heads/main/credits/IMG_0120.jpeg" alt="BlenderTimer" style="width:50px;height:50px;border-radius:50%;">
+            <a href="https://pixabay.com/fr/users/blendertimer-9538909/" style="margin-left:10px; color: #007bff; text-decoration: none;">BlenderTimer</a> for the 2nd test song
+        </li>
+        <li>
+            <img src="https://avatars.githubusercontent.com/mpv-player" alt="MPV" style="width:50px;height:50px;border-radius:50%;">
+            <a href="https://github.com/mpv-player" style="margin-left:10px; color: #007bff; text-decoration: none;">MPV</a> for the MPV Player
+        </li>
+        <li>
+            <img src="https://raw.githubusercontent.com/BananeRapeuse/PyPlaylist/refs/heads/main/credits/IMG_0121.png" alt="GitLFS" style="width:50px;height:50px;border-radius:50%;">
+            <a href="https://git-lfs.com/" style="margin-left:10px; color: #007bff; text-decoration: none;">GitLFS</a> for there verry useful software
+        </li>
+        <li>
+            <img src="https://avatars.githubusercontent.com/Qwertyquerty" alt="GitLFS" style="width:50px;height:50px;border-radius:50%;">
+            <a href="https://github.com/qwertyquert" style="margin-left:10px; color: #007bff; text-decoration: none;">GitLFS</a> for pypresence
+        </li>
+    </ul>
+</section>
+    </main>
+        <footer>
+        <p>&copy; 2025 PyPlaylist. All rights reserved. <a href="privacy-policy.html">Privacy Policy</a></p>
+    </footer>
+</body>
+</html>
