@@ -20,6 +20,22 @@ The software used for playing musics is [MPV](https://github.com/mpv-player/mpv)
 - Discord activity
 For seting your discord activity as "Playing PyPlaylist" and have informations in real-time of what's the music you're listening, I use [pypresence](https://github.com/qwertyquerty/pypresence) to interact with the Discord API.
 
+# Targets
+### Languages
+- [x] English
+- [x] French
+- [ ] Spanish
+- [ ] Russian
+### Features
+- [x] Debugging console
+- [x] Playing Music
+- [x] Automatic playing
+- [x] Playlist management
+- [x] White/Dark Theme
+- [x] Change Discord activity
+- [ ] Good UI Design with cool effects and cool buttons
+- [ ] Flags for start with cmd/PS
+
 # Credits
 
 - [Ph0qu3_111](https://github.com/bananerapeuse) (me) for the software
