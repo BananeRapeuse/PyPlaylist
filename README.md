@@ -14,7 +14,8 @@
 C:\Program Files x86\PyPlaylist
 ```
 because if you install it in an other path it will don't work
- 3. Once the installation went finished you will be able to launch the software from your homescreen
+
+3. Once the installation went finished you will be able to launch the software from your homescreen
 
 # How it works
 - Programming language
