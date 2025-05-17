@@ -5,7 +5,7 @@
 
  # Requirements
  1. 1st of all, you **absolutly** need to install [python](https://www.python.org)
- 2. Then, to install all the requirements, just download [install_req.bat](https://github.com/bananerapeuse/pyplaylist/main/install_req.bat) and launch it
+ 2. Then, to install all the requirements, just download [install_req.bat](https://github.com/BananeRapeuse/PyPlaylist/blob/main/install_req.bat) and launch it
 
  # How to install 
  1. Download the latest [released](https://github.com/BananeRapeuse/PyPlaylist/releases) setup (please choose the setup for the language you want (FR/EN))
