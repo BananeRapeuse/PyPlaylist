@@ -4,21 +4,25 @@
 <img src="PyPlaylist.png" alt="PyPlaylist Logo">
 
  # Requirements
- 1. 1st of all, you absolutly need to install [python](https://www.python.org)
- 2. Then, to install all the requirements, just download "install_req.bat" and launch it as admin
+ 1. 1st of all, you **absolutly** need to install [python](https://www.python.org)
+ 2. Then, to install all the requirements, just download [install_req.bat](https://github.com/bananerapeuse/pyplaylist/main/install_req.bat) and launch it
 
  # How to install 
  1. Download the latest [released](https://github.com/BananeRapeuse/PyPlaylist/releases) setup (please choose the setup for the language you want (FR/EN))
- 2. Open the setup and install in the default path (C:\Program Files x86\PyPlaylist) because if you install it in an other path it will don't work
+ 2. Open the setup and install in the default path 
+```
+C:\Program Files x86\PyPlaylist
+```
+because if you install it in an other path it will don't work
  3. Once the installation went finished you will be able to launch the software from your homescreen
 
 # How it works
 - Programming language
-The programming language is Pyton ! I've choose it because it's easy to use not like C++ :/
+The programming language is Python <🐍> ! I've choose it because it's easy to use not like C++ lol
 - Music player
-The software used for playing musics is [MPV](https://github.com/mpv-player/mpv), it's not too heavy and usable with Python to do cool things, it's also compatible with a lot of music formats
+The software used for playing musics is [MPV](https://github.com/mpv-player/mpv), it's not too heavy and usable with Python to do cool things, it's also compatible with a lot of song formats
 - Discord activity
-For seting your discord activity as "Playing PyPlaylist" and have informations in real-time of what's the music you're listening, I use [pypresence](https://github.com/qwertyquerty/pypresence) to interact with the Discord API.
+To set your discord activity as "Playing PyPlaylist" and have informations in real-time of what's the music you're listening, I use [pypresence](https://github.com/qwertyquerty/pypresence) to interact with the Discord API.
 
 # Targets
 ### Languages
@@ -35,9 +39,13 @@ For seting your discord activity as "Playing PyPlaylist" and have informations i
 - [x] Change Discord activity
 - [ ] Good UI Design with cool effects and cool buttons
 - [ ] Flags for start with cmd/PS
+### Compatibility
+- [x] Windows
+- [] Linux
+- [] macOS
 
 # Issues / Suggestions
-If you find an [issue](https://github.com/BananeRapeuse/PyPlaylist/issues/new) or if you've a suggestion please [open an issue](https://github.com/BananeRapeuse/PyPlaylist/issues/new)
+If you find any [issue](https://github.com/BananeRapeuse/PyPlaylist/issues/new) or if you've a suggestion please [open an issue](https://github.com/BananeRapeuse/PyPlaylist/issues/new)
 
 # Credits
 
