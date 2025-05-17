@@ -18,11 +18,14 @@ because if you install it in an other path it will don't work
 3. Once the installation went finished you will be able to launch the software from your homescreen
 
 # How it works ?
-- Programming language
+- Programming language:
+
 The programming language is Python <🐍> ! I've choose it because it's easy to use not like C++ lol
-- Music player
+- Music player:
+
 The software used for playing musics is [MPV](https://github.com/mpv-player/mpv), it's not too heavy and usable with Python to do cool things, it's also compatible with a lot of song formats
-- Discord activity
+- Discord activity:
+
 To set your discord activity as "Playing PyPlaylist" and have informations in real-time of what's the music you're listening, I use [pypresence](https://github.com/qwertyquerty/pypresence) to interact with the Discord API.
 
 # Targets
