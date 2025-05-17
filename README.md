@@ -11,7 +11,7 @@
  1. Download the latest [released](https://github.com/BananeRapeuse/PyPlaylist/releases) setup (please choose the setup for the language you want (FR/EN))
  2. Open the setup and install in the default path 
 ```
-C:\Program Files x86\PyPlaylist
+C:\Program Files (x86)\PyPlaylist
 ```
 because if you install it in an other path it will don't work
 
