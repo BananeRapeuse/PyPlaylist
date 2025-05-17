@@ -17,7 +17,7 @@ because if you install it in an other path it will don't work
 
 3. Once the installation went finished you will be able to launch the software from your homescreen
 
-# How it works
+# How it works ?
 - Programming language
 The programming language is Python <🐍> ! I've choose it because it's easy to use not like C++ lol
 - Music player
