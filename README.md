@@ -45,8 +45,8 @@ To set your discord activity as "Playing PyPlaylist" and have informations in re
 - [ ] Flags for start with cmd/PS
 ### Compatibility
 - [x] Windows
-- [] Linux
-- [] macOS
+- [ ] Linux
+- [ ] macOS
 
 # Issues / Suggestions
 If you find any [issue](https://github.com/BananeRapeuse/PyPlaylist/issues/new) or if you've a suggestion please [open an issue](https://github.com/BananeRapeuse/PyPlaylist/issues/new)
